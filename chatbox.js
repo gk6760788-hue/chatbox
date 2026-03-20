@@ -1,16 +1,15 @@
-const API_KEY = "AIzaSyBv4cHlSyxs3VWzqXFK-PJQ_1cHJEtNSZM"; // 🔴 Put your API key here
+const express = require("express");
+const cors = require("cors");
+const fetch = require("node-fetch");
 
-async function sendMessage() {
-    let input = document.getElementById("messageInput");
-    let message = input.value.trim();
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-    if (message === "") return;
+const API_KEY = "AIzaSyBv4cHlSyxs3VWzqXFK-PJQ_1cHJEtNSZM"; // 🔴 Put here safely
 
-    addMessage(message, "user");
-    input.value = "";
-
-    // Show typing...
-    let typingMsg = addMessage("Typing...", "bot");
+app.post("/chat", async (req, res) => {
+    const userMessage = req.body.message;
 
     try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -23,34 +22,17 @@ async function sendMessage() {
                 model: "gpt-4o-mini",
                 messages: [
                     { role: "system", content: "You are a helpful assistant." },
-                    { role: "user", content: message }
+                    { role: "user", content: userMessage }
                 ]
             })
         });
 
         const data = await response.json();
-
-        let reply = data.choices[0].message.content;
-
-        typingMsg.remove();
-        addMessage(reply, "bot");
+        res.json(data);
 
     } catch (error) {
-        typingMsg.remove();
-        addMessage("Error: Unable to connect API", "bot");
-        console.error(error);
+        res.status(500).json({ error: "API error" });
     }
-}
+});
 
-function addMessage(text, type) {
-    let chatBox = document.getElementById("chatBox");
-
-    let msg = document.createElement("div");
-    msg.classList.add("message", type);
-    msg.innerText = text;
-
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    return msg;
-} 
+app.listen(3000, () => console.log("Server running on port 3000"));
